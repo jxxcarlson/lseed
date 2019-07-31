@@ -731,6 +731,7 @@ votingView model =
                           }
                         ]
                     }
+                , row [] [ signOutButton model ]
                 ]
 
 
