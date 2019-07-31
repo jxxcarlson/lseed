@@ -21,6 +21,7 @@ type ToBackend
     | ClearClients
     | RequestUsers
     | SignInUser String String
+    | SignoutUser (Maybe User)
     | SendSignUpInfo String String String
     | SendChangePasswordInfo User.Username String String
     | BECastVote String String

@@ -85,7 +85,7 @@ updateFromFrontend clientId msg model =
             ( model, sendToFrontend clientId (SendUserList (userList model.userDict)) )
 
         ClearClients ->
-            ( { model | clients = Set.empty }, broadcast newClients (ClientCountToFE <| 0) )
+            ( { model | clients = Set.empty }, broadcast Set.empty (ClientCountToFE 0) )
 
         SignInUser username password ->
             case User.validateUser model.passwordDict username password of
@@ -105,6 +105,20 @@ updateFromFrontend clientId msg model =
                 False ->
                     ( { model | clients = removeClient clientId model.clients }
                     , sendToFrontend clientId <| ValidateUser Nothing
+                    )
+
+        SignoutUser maybeUser ->
+            case maybeUser of
+                Nothing ->
+                    ( model, Cmd.none )
+
+                Just user ->
+                    let
+                        newClients =
+                            removeClient clientId model.clients
+                    in
+                    ( { model | clients = newClients }
+                    , broadcast newClients (ClientCountToFE <| Set.size newClients)
                     )
 
         SendChangePasswordInfo username password newPassword ->

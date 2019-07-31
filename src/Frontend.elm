@@ -109,12 +109,12 @@ initialModel =
 
 init : ( Model, Cmd FrontendMsg )
 init =
-    ( initialModel, sendToBackend config.timeoutInMs SentToBackendResult ClientJoin )
+    ( initialModel, sendToBackend ClientJoin )
 
 
-sendToBackend : Milliseconds -> (Result WsError () -> FrontendMsg) -> ToBackend -> Cmd FrontendMsg
+sendToBackend : ToBackend -> Cmd FrontendMsg
 sendToBackend =
-    Frontend.sendToBackend
+    Frontend.sendToBackend config.timeoutInMs SentToBackendResult
 
 
 subscriptions model =
@@ -184,7 +184,7 @@ update msg model =
 
                 True ->
                     ( model
-                    , sendToBackend config.timeoutInMs SentToBackendResult RequestUsers
+                    , sendToBackend RequestUsers
                     )
 
         Clear ->
@@ -194,7 +194,7 @@ update msg model =
 
                 True ->
                     ( model
-                    , sendToBackend config.timeoutInMs SentToBackendResult ClearClients
+                    , sendToBackend ClearClients
                     )
 
         -- VOTE
@@ -205,7 +205,7 @@ update msg model =
 
                 Just user ->
                     ( { model | currentUser = Just (User.castVote user) }
-                    , sendToBackend config.timeoutInMs SentToBackendResult (BECastVote user.username candidate)
+                    , sendToBackend (BECastVote user.username candidate)
                     )
 
         -- BACKEND
@@ -247,7 +247,7 @@ update msg model =
 
                         Just user ->
                             ( { model | signInMessage = "OK" }
-                            , sendToBackend config.timeoutInMs SentToBackendResult (SendChangePasswordInfo user.username model.password model.newPassword1)
+                            , sendToBackend (SendChangePasswordInfo user.username model.password model.newPassword1)
                             )
 
                 errorList ->
@@ -258,7 +258,7 @@ update msg model =
 
         SignIn ->
             ( initialModel
-            , sendToBackend config.timeoutInMs SentToBackendResult (SignInUser model.username model.password)
+            , sendToBackend (SignInUser model.username model.password)
             )
 
         SignUp ->
@@ -271,10 +271,10 @@ update msg model =
                     ( { model | signInMessage = String.join ", " signUpErrors }, Cmd.none )
 
                 False ->
-                    ( initialModel, sendToBackend config.timeoutInMs SentToBackendResult (SendSignUpInfo model.username model.password model.email) )
+                    ( initialModel, sendToBackend (SendSignUpInfo model.username model.password model.email) )
 
         SignOut ->
-            ( initialModel, Cmd.none )
+            ( initialModel, sendToBackend (SignoutUser model.currentUser) )
 
         SetAppMode appMode ->
             ( { model | appMode = appMode }, appModeCmd appMode )
@@ -284,7 +284,7 @@ appModeCmd : AppMode -> Cmd FrontendMsg
 appModeCmd mode =
     case mode of
         Admin ->
-            sendToBackend config.timeoutInMs SentToBackendResult RequestUsers
+            sendToBackend RequestUsers
 
         _ ->
             Cmd.none
