@@ -1,16 +1,8 @@
 module Frontend exposing (Model, app)
 
---
--- import Main exposing (UserNotes)
--- import Svg.Attributes exposing (k1)
--- exposing (..)
--- import Date exposing (Date)
-
 import Array exposing (map)
 import Browser exposing (UrlRequest(..))
 import Browser.Dom as Dom
-import DateTime
-import Debounce exposing (Debounce)
 import Dict
 import Element exposing (..)
 import Element.Background as Background
@@ -27,10 +19,10 @@ import Style
 import Task
 import TestData exposing (..)
 import Time exposing (Posix)
-import TypedTime exposing (..)
 import Url exposing (Url)
 import User exposing (User, Username)
 import Utility
+import Vote exposing (VoteCount)
 
 
 app =
@@ -43,7 +35,7 @@ app =
         , subscriptions = subscriptions
         , view =
             \model ->
-                { title = "Lamdera Notes"
+                { title = "Lamdera Votes"
                 , body = [ view model ]
                 }
         }
@@ -51,19 +43,18 @@ app =
 
 
 --
--- TYPES
---
---
 -- MODEL
 --
 
 
 type alias Model =
-    { input : String
-    , appMode : AppMode
+    { appMode : AppMode
     , message : String
     , counter : Int
     , currentTime : Posix
+
+    -- VOTE
+    , voteCount : VoteCount
 
     -- USER
     , currentUser : Maybe User
@@ -72,6 +63,7 @@ type alias Model =
     , newPassword1 : String
     , newPassword2 : String
     , email : String
+    , signInMessage : String
     , userList : List User
     }
 
@@ -89,17 +81,18 @@ config =
     { timeoutInMs = 5 * 1000
     , panelHeight = 550
     , panelWidth = 450
+    , blurb = "Vote for your favorite inventor"
     }
 
 
 initialModel =
-    { input = "App started"
-    , message = "Please sign in"
+    { message = "App started"
     , appMode = UserValidation SignInState
     , currentTime = Time.millisToPosix 0
     , counter = 0
 
-    -- ADMIN
+    -- VOTE
+    , voteCount = Dict.empty
     , -- USER
       currentUser = Nothing
     , username = ""
@@ -107,6 +100,7 @@ initialModel =
     , newPassword1 = ""
     , newPassword2 = ""
     , email = ""
+    , signInMessage = "Please sign in"
     , userList = []
     }
 
@@ -138,20 +132,27 @@ updateFromBackend msg model =
             ( model, Cmd.none )
 
         SendMessage str ->
-            ( { model | message = str }, Cmd.none )
+            ( { model | signInMessage = str }, Cmd.none )
 
         SendUserList userList ->
             ( { model | userList = userList }, Cmd.none )
 
-        SendValidatedUser currentUser ->
+        ValidateUser currentUser ->
             case currentUser of
                 Nothing ->
-                    ( { model | currentUser = Nothing, message = "Incorrect password/username" }, Cmd.none )
+                    ( { model | currentUser = Nothing, signInMessage = "Incorrect password/username" }, Cmd.none )
 
                 Just user ->
-                    ( { model | currentUser = Just user }
+                    ( { model
+                        | currentUser = Just user
+                        , message = "Signed in as " ++ user.username
+                        , appMode = Voting
+                      }
                     , Cmd.none
                     )
+
+        SendVoteCount voteCount ->
+            ( { model | voteCount = voteCount, message = "Vote count at XXX" }, Cmd.none )
 
 
 update : FrontendMsg -> Model -> ( Model, Cmd FrontendMsg )
@@ -172,6 +173,17 @@ update msg model =
                 True ->
                     ( model
                     , sendToBackend config.timeoutInMs SentToBackendResult RequestUsers
+                    )
+
+        -- VOTE
+        CastVote candidate ->
+            case model.currentUser of
+                Nothing ->
+                    ( model, Cmd.none )
+
+                Just user ->
+                    ( { model | currentUser = Just (User.castVote user) }
+                    , sendToBackend config.timeoutInMs SentToBackendResult (BECastVote user.username candidate)
                     )
 
         -- BACKEND
@@ -209,21 +221,23 @@ update msg model =
                 [] ->
                     case model.currentUser of
                         Nothing ->
-                            ( { model | message = "No user signed in" }, Cmd.none )
+                            ( { model | signInMessage = "No user signed in" }, Cmd.none )
 
                         Just user ->
-                            ( { model | message = "OK" }
+                            ( { model | signInMessage = "OK" }
                             , sendToBackend config.timeoutInMs SentToBackendResult (SendChangePasswordInfo user.username model.password model.newPassword1)
                             )
 
                 errorList ->
-                    ( { model | message = String.join ", " errorList }, Cmd.none )
+                    ( { model | signInMessage = String.join ", " errorList }, Cmd.none )
 
         GotEmail str ->
             ( { model | email = str }, Cmd.none )
 
         SignIn ->
-            ( initialModel, sendToBackend config.timeoutInMs SentToBackendResult (SendSignInInfo model.username model.password) )
+            ( initialModel
+            , sendToBackend config.timeoutInMs SentToBackendResult (SignInUser model.username model.password)
+            )
 
         SignUp ->
             let
@@ -232,7 +246,7 @@ update msg model =
             in
             case List.length signUpErrors > 0 of
                 True ->
-                    ( { model | message = String.join ", " signUpErrors }, Cmd.none )
+                    ( { model | signInMessage = String.join ", " signUpErrors }, Cmd.none )
 
                 False ->
                     ( initialModel, sendToBackend config.timeoutInMs SentToBackendResult (SendSignUpInfo model.username model.password model.email) )
@@ -241,7 +255,17 @@ update msg model =
             ( initialModel, Cmd.none )
 
         SetAppMode appMode ->
-            ( { model | appMode = appMode }, Cmd.none )
+            ( { model | appMode = appMode }, appModeCmd appMode )
+
+
+appModeCmd : AppMode -> Cmd FrontendMsg
+appModeCmd mode =
+    case mode of
+        Admin ->
+            sendToBackend config.timeoutInMs SentToBackendResult RequestUsers
+
+        _ ->
+            Cmd.none
 
 
 
@@ -253,7 +277,13 @@ update msg model =
 
 view : Model -> Html FrontendMsg
 view model =
-    Element.layout [] (mainView model)
+    Element.layout
+        [ Font.family
+            [ Font.typeface "Arial"
+            , Font.sansSerif
+            ]
+        ]
+        (mainView model)
 
 
 mainView : Model -> Element FrontendMsg
@@ -267,6 +297,9 @@ mainView model =
 
             Admin ->
                 adminView model
+
+            Voting ->
+                votingView model
         , footer model
         ]
 
@@ -278,20 +311,15 @@ mainView model =
 
 
 footer model =
-    case model.currentUser of
-        Nothing ->
-            blankFooter
-
-        Just _ ->
-            activeFooter model
-
-
-blankFooter =
-    row [ width fill, spacing 18, Background.color Style.charcoal, paddingXY 8 18 ] []
-
-
-activeFooter model =
-    row [ width fill, spacing 18, Background.color Style.charcoal, paddingXY 8 18 ] []
+    row
+        [ spacing 8
+        , Font.size 12
+        , width fill
+        , Background.color Style.charcoal
+        , Font.color Style.white
+        , paddingXY 8 8
+        ]
+        [ el [] (text model.message) ]
 
 
 
@@ -332,7 +360,7 @@ noUserLHS model =
                 , showIf (model.appMode == UserValidation SignUpState) (cancelSignUpButton model)
                 ]
             ]
-        , el [ Font.size 12 ] (text model.message)
+        , el [ Font.size 12 ] (text model.signInMessage)
         ]
 
 
@@ -376,7 +404,7 @@ passwordPanel model =
         [ inputCurrentPassword model
         , inputNewPassword1 model
         , inputNewPassword2 model
-        , el [ Font.size 12 ] (text model.message)
+        , el [ Font.size 12 ] (text model.signInMessage)
         ]
 
 
@@ -549,8 +577,17 @@ header model =
         ]
         [ showIf (currentUserIsAdmin model) (adminModeButton model)
         , userValidationModeButton model
+        , hideIf (model.currentUser == Nothing) (votingModeButton model)
         , el [ centerX, Font.size 18, Font.color Style.white ] (text <| appTitle model)
         ]
+
+
+votingModeButton : Model -> Element FrontendMsg
+votingModeButton model =
+    Input.button ((Style.select <| model.appMode == Voting) Style.selectedHeaderButton Style.headerButton)
+        { onPress = Just (SetAppMode Voting)
+        , label = Element.text "Voting"
+        }
 
 
 currentUserIsAdmin : Model -> Bool
@@ -567,10 +604,10 @@ appTitle : Model -> String
 appTitle model =
     case model.currentUser of
         Nothing ->
-            "Seed App"
+            "Lamdera Vote"
 
         Just user ->
-            user.username ++ ": Seed App"
+            "Voter: " ++ user.username
 
 
 userValidationModeButton : Model -> Element FrontendMsg
@@ -633,6 +670,62 @@ showOne bit str1 str2 =
 
         False ->
             str2
+
+
+
+--
+-- VOTING VIEW
+--
+
+
+votingView : Model -> Element FrontendMsg
+votingView model =
+    case model.currentUser of
+        Nothing ->
+            Element.none
+
+        Just user ->
+            column (Style.mainColumnX ++ [ padding 40 ])
+                [ el [ Font.size 24, Font.bold, centerX ] (text <| "Vote count")
+                , el [ Font.size 18, Font.italic, centerX ] (text <| config.blurb)
+                , indexedTable
+                    [ spacing 12, Font.size 18, paddingXY 0 12, height (px 400), scrollbarY ]
+                    { data = model.voteCount |> Dict.toList |> List.sortBy (\( candidate, votes ) -> candidate)
+                    , columns =
+                        [ { header = el [ Font.bold ] (text "")
+                          , width = px 40
+                          , view = \k _ -> el [ Font.size 18 ] (text <| String.fromInt <| k + 1)
+                          }
+                        , { header = el [ Font.bold ] (text "Candidate")
+                          , width = px 200
+                          , view = \k ( candidate, votes ) -> castVoteButton model candidate
+                          }
+                        , { header = row [ width (px 60) ] [ el [ alignRight, Font.size 18, Font.bold ] (text "Votes") ]
+                          , width = px 60
+                          , view = \k ( candidate, votes ) -> row [ width (px 60) ] [ el [ alignRight ] (text (String.fromInt votes)) ]
+                          }
+                        ]
+                    }
+                ]
+
+
+castVoteButton : Model -> String -> Element FrontendMsg
+castVoteButton model candidate =
+    case model.currentUser of
+        Nothing ->
+            el [] (text "INVALID")
+
+        Just user ->
+            case user.voted of
+                True ->
+                    el [ Font.size 18 ] (text candidate)
+
+                False ->
+                    Input.button Style.headerButton
+                        { onPress =
+                            Just (CastVote candidate)
+                        , label = Element.text candidate
+                        }
 
 
 

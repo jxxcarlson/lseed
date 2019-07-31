@@ -10,25 +10,27 @@ module Msg exposing
 import Browser exposing (UrlRequest(..))
 import Lamdera.Types exposing (ClientId, WsError)
 import Time exposing (Posix)
-import TypedTime exposing (..)
 import Url exposing (Url)
-import User exposing (User)
+import User exposing (User, Username)
+import Vote exposing (VoteCount)
 
 
 type ToBackend
     = NoOpToBackend
     | ClientJoin
     | RequestUsers
-    | SendSignInInfo String String
+    | SignInUser String String
     | SendSignUpInfo String String String
     | SendChangePasswordInfo User.Username String String
+    | BECastVote String String
 
 
 type ToFrontend
     = NoOpToFrontend
     | SendMessage String
-    | SendValidatedUser (Maybe User)
+    | ValidateUser (Maybe User)
     | SendUserList (List User)
+    | SendVoteCount VoteCount
 
 
 type BackendMsg
@@ -44,6 +46,8 @@ type FrontendMsg
     | SetAppMode AppMode
     | SentToBackendResult (Result WsError ())
     | TimeChange Posix
+      -- VOTE
+    | CastVote String
       -- User
     | GotUserName String
     | GotPassword String
@@ -62,6 +66,7 @@ type FrontendMsg
 type AppMode
     = UserValidation ValidationState
     | Admin
+    | Voting
 
 
 

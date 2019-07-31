@@ -6,8 +6,10 @@ module User exposing
     , UserInfo
     , Username
     , add
+    , castVote
     , deleteUser
     , encrypt
+    , enterUserAsVoted
     , fromDict
     , getData
     , validateChangePassword
@@ -35,11 +37,25 @@ type alias UserDict =
 
 
 type alias UserInfo =
-    { email : String, admin : Bool, counter : Int }
+    { email : String, admin : Bool, voted : Bool }
 
 
 type alias User =
-    { username : Username, email : String, admin : Bool }
+    { username : Username, email : String, admin : Bool, voted : Bool }
+
+
+castVote : User -> User
+castVote user =
+    { user | voted = True }
+
+
+enterUserAsVoted : Username -> UserDict -> UserDict
+enterUserAsVoted username userDict =
+    let
+        updater =
+            Maybe.map (\userInfo -> { userInfo | voted = True })
+    in
+    Dict.update username updater userDict
 
 
 fromDict : UserDict -> Username -> Maybe User
@@ -49,7 +65,7 @@ fromDict userDict username =
             Nothing
 
         Just userInfo ->
-            Just { username = username, email = userInfo.email, admin = userInfo.admin }
+            Just { username = username, email = userInfo.email, admin = userInfo.admin, voted = userInfo.voted }
 
 
 getData : Username -> UserDict -> Maybe UserInfo
@@ -138,7 +154,7 @@ add username password email ( passwordDict, userDict ) =
                     Dict.insert username (encrypt password) passwordDict
 
                 newUserInfo =
-                    { email = email, admin = False, counter = 0 }
+                    { email = email, admin = False, voted = False }
 
                 newUserDict =
                     Dict.insert username newUserInfo userDict

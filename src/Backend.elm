@@ -9,6 +9,7 @@ import Msg exposing (..)
 import Set exposing (Set)
 import TestData exposing (passwordDict)
 import User exposing (PasswordDict, User, UserDict, UserInfo, Username)
+import Vote exposing (VoteCount)
 
 
 app =
@@ -29,6 +30,7 @@ app =
 type alias Model =
     { passwordDict : PasswordDict
     , userDict : UserDict
+    , voteCount : VoteCount
     , clients : Set ClientId
     }
 
@@ -37,6 +39,7 @@ init : ( Model, Cmd BackendMsg )
 init =
     ( { passwordDict = TestData.passwordDict
       , userDict = TestData.userDict
+      , voteCount = TestData.voteCount
       , clients = Set.empty
       }
     , Cmd.none
@@ -68,17 +71,18 @@ updateFromFrontend clientId msg model =
         RequestUsers ->
             ( model, sendToFrontend clientId (SendUserList (userList model.userDict)) )
 
-        SendSignInInfo username password ->
+        SignInUser username password ->
             case User.validateUser model.passwordDict username password of
                 True ->
                     ( model
                     , Cmd.batch
-                        [ sendToFrontend clientId <| SendValidatedUser (User.fromDict model.userDict username)
+                        [ sendToFrontend clientId <| ValidateUser (User.fromDict model.userDict username)
+                        , sendToFrontend clientId (SendVoteCount model.voteCount)
                         ]
                     )
 
                 False ->
-                    ( model, sendToFrontend clientId <| SendValidatedUser Nothing )
+                    ( model, sendToFrontend clientId <| ValidateUser Nothing )
 
         SendChangePasswordInfo username password newPassword ->
             case User.validateUser model.passwordDict username password of
@@ -99,11 +103,23 @@ updateFromFrontend clientId msg model =
             case User.add username password email ( model.passwordDict, model.userDict ) of
                 Ok ( newPasswordDict, newUserDict ) ->
                     ( { model | userDict = newUserDict, passwordDict = newPasswordDict }
-                    , sendToFrontend clientId <| SendValidatedUser (User.fromDict newUserDict username)
+                    , sendToFrontend clientId <| ValidateUser (User.fromDict newUserDict username)
                     )
 
                 Err str ->
-                    ( model, sendToFrontend clientId <| SendValidatedUser Nothing )
+                    ( model, sendToFrontend clientId <| ValidateUser Nothing )
+
+        BECastVote username candidate ->
+            let
+                newVoteCount =
+                    Vote.cast candidate model.voteCount
+            in
+            ( { model
+                | userDict = User.enterUserAsVoted username model.userDict
+                , voteCount = newVoteCount
+              }
+            , sendToFrontend clientId (SendVoteCount newVoteCount)
+            )
 
         ClientJoin ->
             ( model, Cmd.none )
