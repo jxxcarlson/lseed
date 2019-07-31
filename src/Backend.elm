@@ -59,7 +59,20 @@ update msg model =
                     ( model, Cmd.none )
 
                 Err _ ->
-                    ( model, Cmd.none )
+                    -- Message was not delivered successfully, it timed out.
+                    -- Let's consider that client dead, and remove it from the set of clients.
+                    if Set.member clientId model.clients then
+                        let
+                            newClients =
+                                Set.remove clientId model.clients
+                        in
+                        ( { model | clients = newClients }, broadcast newClients (ClientTimeoutReceived clientId) )
+
+                    else
+                        -- we've already registered this user as disconnected.
+                        -- if we didn't do this extra check, this naive timeout implementation would send duplicate ClientTimeoutReceived msgs for each message the leaving client didn't receive, until the first of those messages timed out.
+                        -- A better implementation would send heartbeats to all clients and use that to detect dead clients, but that requires periodic timers, which the backend doesn't support yet.
+                        ( model, Cmd.none )
 
 
 updateFromFrontend : ClientId -> ToBackend -> Model -> ( Model, Cmd BackendMsg )
@@ -70,6 +83,9 @@ updateFromFrontend clientId msg model =
 
         RequestUsers ->
             ( model, sendToFrontend clientId (SendUserList (userList model.userDict)) )
+
+        ClearClients ->
+            ( { model | clients = Set.empty }, Cmd.none )
 
         SignInUser username password ->
             case User.validateUser model.passwordDict username password of

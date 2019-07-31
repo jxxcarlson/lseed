@@ -133,6 +133,9 @@ updateFromBackend msg model =
         NoOpToFrontend ->
             ( model, Cmd.none )
 
+        ClientTimeoutReceived clientId ->
+            ( { model | message = "Client time out" }, Cmd.none )
+
         SendMessage str ->
             ( { model | signInMessage = str }, Cmd.none )
 
@@ -166,6 +169,10 @@ update msg model =
         FENoop ->
             ( model, Cmd.none )
 
+        -- APP
+        ClientTimedOut _ ->
+            ( { model | message = "Client timed out" }, Cmd.none )
+
         TimeChange t ->
             ( { model | currentTime = t }, Cmd.none )
 
@@ -178,6 +185,16 @@ update msg model =
                 True ->
                     ( model
                     , sendToBackend config.timeoutInMs SentToBackendResult RequestUsers
+                    )
+
+        Clear ->
+            case currentUserIsAdmin model of
+                False ->
+                    ( model, Cmd.none )
+
+                True ->
+                    ( model
+                    , sendToBackend config.timeoutInMs SentToBackendResult ClearClients
                     )
 
         -- VOTE
@@ -779,7 +796,26 @@ adminView_ model user =
                   }
                 ]
             }
+        , row [] [ clearClientsButton model ]
         ]
+
+
+clearClientsButton model =
+    case model.currentUser of
+        Nothing ->
+            Element.none
+
+        Just user ->
+            case user.admin of
+                False ->
+                    Element.none
+
+                True ->
+                    Input.button
+                        Style.headerButton
+                        { onPress = Just Clear
+                        , label = text "Clear"
+                        }
 
 
 

@@ -18,6 +18,7 @@ import Vote exposing (VoteCount)
 type ToBackend
     = NoOpToBackend
     | ClientJoin
+    | ClearClients
     | RequestUsers
     | SignInUser String String
     | SendSignUpInfo String String String
@@ -27,6 +28,7 @@ type ToBackend
 
 type ToFrontend
     = NoOpToFrontend
+    | ClientTimeoutReceived ClientId
     | SendMessage String
     | ValidateUser (Maybe User)
     | SendUserList (List User)
@@ -43,7 +45,9 @@ type FrontendMsg
     = FENoop
       -- Admin
     | SendUsers
+    | Clear
       -- App
+    | ClientTimedOut ClientId
     | SetAppMode AppMode
     | SentToBackendResult (Result WsError ())
     | TimeChange Posix
