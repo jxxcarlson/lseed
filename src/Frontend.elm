@@ -409,7 +409,7 @@ noUserRHS model =
             , text "voter part and replace it with other code so as to have the beginnings of "
             , text "a new app with an admin and authentication system.  "
             ]
-        , Element.newTabLink [] { url = "https://github.com/jxxcarlson/voter-tally", label = el [ Font.color Style.blu e ] (text "github.com/jxxcarlson/vote-tally") }
+        , Element.newTabLink [] { url = "https://github.com/jxxcarlson/voter-tally", label = el [ Font.color Style.blue ] (text "github.com/jxxcarlson/vote-tally") }
         , Element.paragraph []
             [ el [ Font.bold ] (text "Note. ")
             , text "The authentication system is insecure.  You must replace User.encrypt by something better."
