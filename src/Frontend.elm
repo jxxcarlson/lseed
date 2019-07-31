@@ -344,7 +344,9 @@ footer model =
         , Font.color Style.white
         , paddingXY 8 8
         ]
-        [ el [] (text model.message), el [] (text <| "Voters online: " ++ String.fromInt model.clientCount) ]
+        [ el [] (text model.message)
+        , hideIf (model.currentUser == Nothing) (el [] (text <| "Voters online: " ++ String.fromInt model.clientCount))
+        ]
 
 
 
