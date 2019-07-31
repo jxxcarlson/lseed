@@ -74,7 +74,7 @@ updateFromFrontend clientId msg model =
         SignInUser username password ->
             case User.validateUser model.passwordDict username password of
                 True ->
-                    ( model
+                    ( { model | clients = Set.insert clientId model.clients }
                     , Cmd.batch
                         [ sendToFrontend clientId <| ValidateUser (User.fromDict model.userDict username)
                         , sendToFrontend clientId (SendVoteCount model.voteCount)
@@ -102,7 +102,11 @@ updateFromFrontend clientId msg model =
         SendSignUpInfo username password email ->
             case User.add username password email ( model.passwordDict, model.userDict ) of
                 Ok ( newPasswordDict, newUserDict ) ->
-                    ( { model | userDict = newUserDict, passwordDict = newPasswordDict }
+                    ( { model
+                        | userDict = newUserDict
+                        , passwordDict = newPasswordDict
+                        , clients = Set.insert clientId model.clients
+                      }
                     , sendToFrontend clientId <| ValidateUser (User.fromDict newUserDict username)
                     )
 

@@ -690,6 +690,7 @@ votingView model =
             column (Style.mainColumnX ++ [ padding 40 ])
                 [ el [ Font.size 24, Font.bold, centerX ] (text <| "Vote count")
                 , el [ Font.size 18, Font.italic, centerX ] (text <| config.blurb)
+                , showIf user.voted (el [ Font.size 18, Font.italic, centerX ] (text <| "Thankyou for voting!"))
                 , indexedTable
                     [ spacing 12, Font.size 18, paddingXY 0 12, height (px 400), scrollbarY ]
                     { data = model.voteCount |> Dict.toList |> List.sortBy (\( candidate, votes ) -> candidate)
