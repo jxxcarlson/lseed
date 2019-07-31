@@ -392,7 +392,7 @@ noUserLHS model =
 
 
 noUserRHS model =
-    column [ padding 40, spacing 18, Font.size 16, width (px 300), height (px 700), scrollbarY ]
+    column [ padding 40, spacing 18, Font.size 16, width (px 360), height (px 700), scrollbarY ]
         [ el [ Font.bold, Font.size 24 ]
             (text "Lamdera Vote Tally")
         , image
@@ -409,6 +409,7 @@ noUserRHS model =
             , text "voter part and replace it with other code so as to have the beginnings of "
             , text "a new app with an admin and authentication system.  "
             ]
+        , Element.newTabLink [] { url = "https://github.com/jxxcarlson/voter-tally", label = el [ Font.color Style.blu e ] (text "github.com/jxxcarlson/vote-tally") }
         , Element.paragraph []
             [ el [ Font.bold ] (text "Note. ")
             , text "The authentication system is insecure.  You must replace User.encrypt by something better."
