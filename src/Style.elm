@@ -170,8 +170,8 @@ mainColumn w h =
     [ paddingXY 8 8, spacing 12, width w, height h, clipY, clipX ]
 
 
-mainColumnX =
-    mainColumn fill fill ++ [ spacing 12, padding 12, Background.color (makeGrey 0.9) ]
+mainColumnX w_ h_ =
+    mainColumn w_ h_ ++ [ spacing 12, padding 12, Background.color (makeGrey 0.9) ]
 
 
 mainColumn2 w h =
@@ -198,12 +198,12 @@ navBarPhone w =
     [ spacing 8, Background.color charcoal, paddingXY 12 8, width w ]
 
 
-footer =
-    [ spacing 24, Background.color charcoal, paddingXY 12 8, alignBottom, width fill, Font.size 14 ]
+footer width_ =
+    [ spacing 24, Background.color charcoal, paddingXY 12 8, alignBottom, width width_, Font.size 14 ]
 
 
-footerForPhone =
-    [ spacing 8, Background.color charcoal, paddingXY 12 8, alignBottom, width fill, Font.size 12 ]
+footerForPhone width_ =
+    [ spacing 8, Background.color charcoal, paddingXY 12 8, alignBottom, width width_, Font.size 12 ]
 
 
 footerItem =

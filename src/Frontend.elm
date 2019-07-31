@@ -82,6 +82,9 @@ config =
     { timeoutInMs = 5 * 1000
     , panelHeight = 550
     , panelWidth = 450
+    , appWidth = px 500
+    , appHeight = fill
+    , headerWidth = 500
     , blurb = "Vote for your favorite inventor"
     }
 
@@ -336,7 +339,7 @@ footer model =
     row
         [ spacing 24
         , Font.size 12
-        , width fill
+        , width (px config.headerWidth)
         , Background.color Style.charcoal
         , Font.color Style.white
         , paddingXY 8 8
@@ -369,7 +372,7 @@ noUserView model =
 
 
 noUserLHS model =
-    column Style.mainColumnX
+    column (Style.mainColumnX config.appWidth config.appHeight)
         [ el [ Font.size 18, Font.bold, paddingXY 0 12 ] (text "Welcome!")
         , inputUserName model
         , inputPassword model
@@ -411,7 +414,7 @@ noUserRHS model =
 
 signedInUserView : Model -> User -> Element FrontendMsg
 signedInUserView model user =
-    column Style.mainColumnX
+    column (Style.mainColumnX config.appWidth config.appHeight)
         [ el [] (text <| "Signed in as " ++ user.username)
         , signOutButton model
         , showIf (model.appMode == UserValidation ChangePasswordState) (passwordPanel model)
@@ -594,7 +597,7 @@ signOutButton model =
 header : Model -> Element FrontendMsg
 header model =
     row
-        [ width fill
+        [ width (px config.headerWidth)
         , paddingXY 40 8
         , Background.color Style.charcoal
         , spacing 12
@@ -658,7 +661,7 @@ adminModeButton model =
 
 masterView : Model -> Element FrontendMsg
 masterView model =
-    column Style.mainColumnX
+    column (Style.mainColumnX config.appWidth config.appHeight)
         [ text "VIEW"
         ]
 
@@ -709,7 +712,7 @@ votingView model =
             Element.none
 
         Just user ->
-            column (Style.mainColumnX ++ [ padding 40 ])
+            column (Style.mainColumnX config.appWidth config.appHeight ++ [ padding 40 ])
                 [ el [ Font.size 24, Font.bold, centerX ] (text <| "Vote count")
                 , el [ Font.size 18, Font.italic, centerX ] (text <| config.blurb)
                 , showIf user.voted (el [ Font.size 18, Font.italic, centerX ] (text <| "Thankyou for voting!"))
@@ -777,7 +780,7 @@ adminView model =
 
 adminView_ : Model -> User -> Element FrontendMsg
 adminView_ model user =
-    column Style.mainColumnX
+    column (Style.mainColumnX config.appWidth config.appHeight)
         [ el [ Font.size 14 ] (text <| "Admin: " ++ user.username)
         , indexedTable
             [ spacing 4, Font.size 12, paddingXY 0 12, height (px 300), scrollbarY ]
