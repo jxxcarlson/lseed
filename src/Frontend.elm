@@ -35,7 +35,7 @@ app =
         , subscriptions = subscriptions
         , view =
             \model ->
-                { title = "Lamdera Votes"
+                { title = "Lamdera Vote Tally"
                 , body = [ view model ]
                 }
         }
@@ -367,20 +367,22 @@ noUserLHS model =
 noUserRHS model =
     column [ padding 40, spacing 18, Font.size 16 ]
         [ el [ Font.bold, Font.size 24 ]
-            (text "Screenshot of app")
+            (text "Lamdera Voter")
         , image
-            [ width (px config.panelWidth) ]
-            { src = "http://noteimages.s3.amazonaws.com/jim_images/notes-screen.png"
-            , description = "screenshot of app"
+            [ width (px 200) ]
+            { src = "https://cdn.imgbin.com/13/12/6/imgbin-general-election-ballot-box-voting-title-box-J0juQk8iyrbFQVdZUPbS3TGCe.jpg"
+            , description = "Ballot box"
             }
         , Element.paragraph []
-            [ el [ Font.bold ] (text "Features. ")
-            , text "Searchable note repository. Supports Markdown. Filter notes by title, tags, full text. "
-            , text "Active links to the most-used tags. Notes are automatically saved every 0.5 second."
+            [ el [ Font.bold ] (text "Lamdera Vote Tally ")
+            , text "is a demo of the capabilities of Lamdera. "
+            , text "It has a basic user authentication and admin system. "
+            , text "Since the app is quite simple, it can be used as a 'seed' for other apps. "
+            , text "Just rip out the voter part and replace it with your code. "
             ]
         , Element.paragraph []
-            [ el [ Font.bold ] (text "Coming soon. ")
-            , text "Filter by date, options to sort note list; export."
+            [ el [ Font.bold ] (text "Note. ")
+            , text "The authentication system is insecure.  You must replace User.encrypt by something better."
             ]
         ]
 
