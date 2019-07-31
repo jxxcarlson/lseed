@@ -52,6 +52,7 @@ type alias Model =
     , message : String
     , counter : Int
     , currentTime : Posix
+    , clientCount : Int
 
     -- VOTE
     , voteCount : VoteCount
@@ -90,6 +91,7 @@ initialModel =
     , appMode = UserValidation SignInState
     , currentTime = Time.millisToPosix 0
     , counter = 0
+    , clientCount = 0
 
     -- VOTE
     , voteCount = Dict.empty
@@ -151,8 +153,11 @@ updateFromBackend msg model =
                     , Cmd.none
                     )
 
-        SendVoteCount voteCount ->
-            ( { model | voteCount = voteCount, message = "Vote count at XXX" }, Cmd.none )
+        VoteCounttoFE voteCount ->
+            ( { model | voteCount = voteCount, message = "Vote count: " ++ String.fromInt (Vote.total voteCount) }, Cmd.none )
+
+        ClientCountToFE clientCount ->
+            ( { model | clientCount = clientCount }, Cmd.none )
 
 
 update : FrontendMsg -> Model -> ( Model, Cmd FrontendMsg )
@@ -312,14 +317,14 @@ mainView model =
 
 footer model =
     row
-        [ spacing 8
+        [ spacing 24
         , Font.size 12
         , width fill
         , Background.color Style.charcoal
         , Font.color Style.white
         , paddingXY 8 8
         ]
-        [ el [] (text model.message) ]
+        [ el [] (text model.message), el [] (text <| "Voters online: " ++ String.fromInt model.clientCount) ]
 
 
 

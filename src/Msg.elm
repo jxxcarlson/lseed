@@ -30,7 +30,8 @@ type ToFrontend
     | SendMessage String
     | ValidateUser (Maybe User)
     | SendUserList (List User)
-    | SendVoteCount VoteCount
+    | VoteCounttoFE VoteCount
+    | ClientCountToFE Int
 
 
 type BackendMsg

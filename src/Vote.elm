@@ -1,4 +1,4 @@
-module Vote exposing (VoteCount, cast)
+module Vote exposing (VoteCount, cast, total)
 
 import Dict exposing (Dict)
 
@@ -14,3 +14,8 @@ cast candidate voteCount =
             Maybe.map (\count -> count + 1)
     in
     Dict.update candidate updater voteCount
+
+
+total : VoteCount -> Int
+total voteCount =
+    List.sum (Dict.values voteCount)

@@ -74,15 +74,22 @@ updateFromFrontend clientId msg model =
         SignInUser username password ->
             case User.validateUser model.passwordDict username password of
                 True ->
-                    ( { model | clients = Set.insert clientId model.clients }
+                    let
+                        newClients =
+                            Set.insert clientId model.clients
+                    in
+                    ( { model | clients = newClients }
                     , Cmd.batch
                         [ sendToFrontend clientId <| ValidateUser (User.fromDict model.userDict username)
-                        , sendToFrontend clientId (SendVoteCount model.voteCount)
+                        , sendToFrontend clientId (VoteCounttoFE model.voteCount)
+                        , broadcast newClients (ClientCountToFE <| Set.size newClients)
                         ]
                     )
 
                 False ->
-                    ( model, sendToFrontend clientId <| ValidateUser Nothing )
+                    ( { model | clients = removeClient clientId model.clients }
+                    , sendToFrontend clientId <| ValidateUser Nothing
+                    )
 
         SendChangePasswordInfo username password newPassword ->
             case User.validateUser model.passwordDict username password of
@@ -111,7 +118,7 @@ updateFromFrontend clientId msg model =
                     )
 
                 Err str ->
-                    ( model, sendToFrontend clientId <| ValidateUser Nothing )
+                    ( { model | clients = removeClient clientId model.clients }, sendToFrontend clientId <| ValidateUser Nothing )
 
         BECastVote username candidate ->
             let
@@ -122,7 +129,10 @@ updateFromFrontend clientId msg model =
                 | userDict = User.enterUserAsVoted username model.userDict
                 , voteCount = newVoteCount
               }
-            , broadcast model.clients (SendVoteCount newVoteCount)
+            , Cmd.batch
+                [ broadcast model.clients (VoteCounttoFE newVoteCount)
+                , broadcast model.clients (ClientCountToFE <| Set.size model.clients)
+                ]
             )
 
         ClientJoin ->
@@ -145,6 +155,16 @@ sendToFrontend clientId msg =
 --
 -- HELPERS
 --
+
+
+removeClient : ClientId -> Set ClientId -> Set ClientId
+removeClient clientId clients =
+    case Set.member clientId clients of
+        True ->
+            Set.remove clientId clients
+
+        False ->
+            clients
 
 
 userList : UserDict -> List User
