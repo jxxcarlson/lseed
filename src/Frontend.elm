@@ -390,7 +390,7 @@ noUserLHS model =
 
 
 noUserRHS model =
-    column [ padding 40, spacing 18, Font.size 16 ]
+    column [ padding 40, spacing 18, Font.size 16, width (px 300), height (px 700), scrollbarY ]
         [ el [ Font.bold, Font.size 24 ]
             (text "Lamdera Vote Tally")
         , image
@@ -400,10 +400,12 @@ noUserRHS model =
             }
         , Element.paragraph []
             [ el [ Font.bold ] (text "Lamdera Vote Tally ")
-            , text "is a demo of the capabilities of Lamdera. "
-            , text "It has a basic user authentication and admin system. "
-            , text "Since the app is quite simple, it can be used as a 'seed' for other apps. "
-            , text "Just rip out the voter part and replace it with your code. "
+            , text "is a little demo of the capabilities of Lamdera. "
+            , text "It is designed to run a small election, and has as well "
+            , text "basic user authentication and admin systems. "
+            , text "I've used this setup several times now: just rip out the "
+            , text "voter part and replace it with other code so as to have the beginnings of "
+            , text "a new app with an admin and authentication system.  "
             ]
         , Element.paragraph []
             [ el [ Font.bold ] (text "Note. ")
