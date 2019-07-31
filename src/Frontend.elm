@@ -389,7 +389,7 @@ noUserLHS model =
 noUserRHS model =
     column [ padding 40, spacing 18, Font.size 16 ]
         [ el [ Font.bold, Font.size 24 ]
-            (text "Lamdera Voter")
+            (text "Lamdera Vote Tally")
         , image
             [ width (px 200) ]
             { src = "https://cdn.imgbin.com/13/12/6/imgbin-general-election-ballot-box-voting-title-box-J0juQk8iyrbFQVdZUPbS3TGCe.jpg"
