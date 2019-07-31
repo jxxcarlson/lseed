@@ -118,11 +118,18 @@ updateFromFrontend clientId msg model =
                 | userDict = User.enterUserAsVoted username model.userDict
                 , voteCount = newVoteCount
               }
-            , sendToFrontend clientId (SendVoteCount newVoteCount)
+            , broadcast model.clients (SendVoteCount newVoteCount)
             )
 
         ClientJoin ->
             ( model, Cmd.none )
+
+
+broadcast clients msg =
+    clients
+        |> Set.toList
+        |> List.map (\clientId -> sendToFrontend clientId msg)
+        |> Cmd.batch
 
 
 sendToFrontend : ClientId -> ToFrontend -> Cmd BackendMsg
