@@ -718,7 +718,7 @@ votingView model =
 
         Just user ->
             column (Style.mainColumnX config.appWidth config.appHeight ++ [ padding 40 ])
-                [ el [ Font.size 24, Font.bold, centerX ] (text <| "Vote count")
+                [ el [ Font.size 24, Font.bold, centerX ] (text <| "Vote tally")
                 , el [ Font.size 18, Font.italic, centerX ] (text <| config.blurb)
                 , showIf user.voted (el [ Font.size 18, Font.italic, centerX ] (text <| "Thankyou for voting!"))
                 , indexedTable
@@ -741,6 +741,20 @@ votingView model =
                     }
                 , row [] [ signOutButton model ]
                 ]
+
+
+votingBGColor model =
+    case model.currentUser of
+        Nothing ->
+            Element.rgb255 220 220 220
+
+        Just user ->
+            case user.voted of
+                True ->
+                    Element.rgb255 153 204 255
+
+                False ->
+                    Element.rgb255 230 255 204
 
 
 castVoteButton : Model -> String -> Element FrontendMsg
